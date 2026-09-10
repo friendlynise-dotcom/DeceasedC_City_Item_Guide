@@ -474,9 +474,9 @@ function renderNpcSection(b){
       }).join('')+'</div></div>';
 }
 function renderContainers(b,rawQ,q){
-    let out='';
-    for(const c of b.containers||[]){
-        const key=b.id+'::'+c.id;
+    let out=(q?'<div class="sub">Search matches: '+countContainerMatches(b.containers||[],rawQ,q)+' container(s)</div>':'');
+    for(const c of sortContainersByMatch(b.containers||[],rawQ,q)){
+        const key=b.id+'::'+(c.floor||'')+'::'+c.id;
         const cMatch=!!q&&queryMatches(c.name,rawQ,q);
         const iMatch=!!q&&(c.items||[]).some(it=>itemMatches(it,rawQ,q));
         const hasSearchMatch=cMatch||iMatch;
@@ -484,7 +484,7 @@ function renderContainers(b,rawQ,q){
         const isOpen=remembered===undefined?hasSearchMatch:remembered;
         const headName=cMatch?highlight(c.name,rawQ):html(c.name);
         let rows='';
-        for(const it of c.items||[]){
+        for(const it of sortItemsByMatch(c.items||[],rawQ,q)){
             const hit=itemMatches(it,rawQ,q);
             const ic=iconForRecord(it),label=it.display||pretty(it.item),name=hit?highlight(label,rawQ):html(label);
             const visual=ic?(it.gun?'<span class="gun-wrap"><img src="'+ic+'" class="icon"></span>':'<img src="'+ic+'" class="icon">'):'<span class="missing">ITEM</span>';
@@ -672,5 +672,8 @@ function mobFilterRow(){var h='<div class="filterrow">';var tiers=['Tier 1','Tie
 function locFilterRow(){var h='<div class="filterrow">';var tiers=['All','Tier 1','Tier 2','Tier 3','Tier 4'];for(const t of tiers){h+='<button class="btn'+(activeTier===t?' active':'')+'" data-ltier="'+t+'">'+(t==='All'?'All':'T'+t.split(' ')[1])+'</button>';}h+='<button class="btn sort-btn'+(chanceSort!=='none'?' active':'')+'" data-lchance="1">'+(chanceSort==='desc'?'Chance: High-Low':chanceSort==='asc'?'Chance: Low-High':'Chance')+'</button></div>';return h;}
 function cubeHtml(url){return '<span class="cube"><i style="background-image:url('+url+')"></i><i style="background-image:url('+url+')"></i><i style="background-image:url('+url+')"></i></span>';}
 function mobListSort(a,b){if(mobChanceSort==='asc'||mobChanceSort==='desc'){var ca=mobBestChance(a),cb=mobBestChance(b);if(ca!==cb)return mobChanceSort==='asc'?(ca-cb):(cb-ca);}return a.name.localeCompare(b.name);}
+function sortContainersByMatch(list,rawQ,q){try{if(!q)return list;var s=list.map(function(c,i){var hit=(queryMatches(c.name,rawQ,q)||(c.items||[]).some(function(it){return itemMatches(it,rawQ,q);}));return {c:c,i:i,hit:hit?1:0};});s.sort(function(a,b){return b.hit-a.hit||a.i-b.i;});return s.map(function(x){return x.c;});}catch(e){return list;}}
+function sortItemsByMatch(list,rawQ,q){try{if(!q)return list;var s=list.map(function(it,i){return {it:it,i:i,hit:itemMatches(it,rawQ,q)?1:0};});s.sort(function(a,b){return b.hit-a.hit||a.i-b.i;});return s.map(function(x){return x.it;});}catch(e){return list;}}
+function countContainerMatches(list,rawQ,q){try{var n=0;for(const c of list){if(queryMatches(c.name,rawQ,q)||(c.items||[]).some(function(it){return itemMatches(it,rawQ,q);}))n++;}return n;}catch(e){return 0;}}
 function scrollToMatch(){try{var q0=(typeof searchEl!=='undefined'&&searchEl&&searchEl.value)?searchEl.value.trim():'';if(!q0)return;var m=viewEl.querySelector('.mob-drop.search-result,.row.search-result,.npc-trade-item.search-result');if(m&&m.scrollIntoView)m.scrollIntoView({block:'nearest'});}catch(e){}}
 document.addEventListener('click',function(e){var t=e.target.closest?e.target.closest('[data-mtier],[data-mchance],[data-ltier],[data-lchance]'):null;if(t){if(t.hasAttribute('data-mtier')){mobTierFilter=t.getAttribute('data-mtier');renderMobList();}else if(t.hasAttribute('data-mchance')){mobChanceSort=mobChanceSort==='none'?'asc':mobChanceSort==='asc'?'desc':'none';renderMobList();}else if(t.hasAttribute('data-ltier')){setTier(t.getAttribute('data-ltier'));}else if(t.hasAttribute('data-lchance')){cycleChanceSort();var sc=document.getElementById('sortChance');if(sc)t.textContent=sc.textContent;}}if(e.target.closest&&(e.target.closest('.btn')||e.target.closest('.card')))ping();});</script></div></body></html>
